@@ -34,13 +34,10 @@ def story(searched_sha, branch, repo)
 
   while(!finished)
     current_commit = next_commit
+    print_story(current_commit, head, merge_commits, merge_commits_directions) if(current_commit.sha == searched_sha)
 
     #go back to previous merge commit and go to its next parent
     if(current_commit.parents.empty? or processed_merge_commits.include?(current_commit) or current_commit.sha == searched_sha)
-      if(current_commit.sha == searched_sha)
-        print_story(current_commit, head, merge_commits, merge_commits_directions)
-      end
-
       done = false
       while(!done and merge_commits.any?)
         merge_commits_directions[merge_commits_directions.length - 1] += 1
@@ -53,11 +50,13 @@ def story(searched_sha, branch, repo)
       end
       finished = merge_commits.empty?
       next_commit = merge_commits.last.parents[merge_commits_directions.last] if !finished
+
     #merge commit - update merge commits info and go to first parent of this merge commit
     elsif(current_commit.parents.length > 1)
       merge_commits << current_commit
       merge_commits_directions << 0
       next_commit = current_commit.parents[0]
+
     #standard commit - go to first parent
     else
       next_commit = current_commit.parents[0]
