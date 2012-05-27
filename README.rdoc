@@ -1,6 +1,15 @@
 == Introduction
 Have you ever found yourself wondering how a particular commit made it into the master branch? A commit probably started its live on a separate branch before making it way to the master branch through a series of pull requests and merges. This merge history can be quite complex and there is no tool that just shows you the relevant merges. The git-story ruby script aims to remedy this.
 
+== Getting Started
+First you'll need to install the git-story gem, as this will download the other gems required to run this script:
+
+  gem install git-story
+
+Next you'll want to download the script file fron the /lib folder and make it executable by running:
+
+  chmod u+x git-story
+
 == Example
 Finding all the ways that a given commit could have made it into a particular branch is as easy as running
 
