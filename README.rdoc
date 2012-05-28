@@ -6,7 +6,7 @@ First you'll need to install the git-story gem, as this will download the other 
 
   gem install git-story
 
-Next you'll want to download the script file fron the /lib folder and make it executable by running:
+Next you'll want to download the script file from the /lib folder and make it executable by running:
 
   chmod u+x git-story
 
