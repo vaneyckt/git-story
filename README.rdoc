@@ -1,3 +1,7 @@
+== Recently found issues
+- grit throws an error for stack overflow due to recursion on big git repos.
+- large repos are really slow to search.
+
 == Introduction
 Have you ever found yourself wondering what branch a particular commit came from in git? Or how your master branch ended up containing that commit that really shouldn't be there? That commit probably started its live on a separate branch before making its way to the master branch through a series of pull requests and merges. This merge history can be quite complex and there is no tool that just shows you the relevant merges. The git-story ruby script aims to remedy this.
 
