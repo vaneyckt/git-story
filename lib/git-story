@@ -5,7 +5,7 @@ require 'grit'
 require 'trollop'
 
 def print(commit, suffix)
-  puts "#{commit.committed_date}  #{commit.sha}  #{commit.message}  #{commit.committer}  #{suffix}"
+  puts "#{commit.committed_date}  #{commit.sha}  #{commit.message.strip.split("\n").first}  #{commit.committer}  #{suffix}"
 end
 
 def print_story(current_commit, head, merge_commits, merge_commits_directions)
@@ -26,7 +26,7 @@ end
 def story(searched_sha, branch, repo)
   merge_commits = []
   merge_commits_directions = []
-  processed_merge_commits = Set.new
+  processed_shas = Set.new
 
   head = repo.commits(branch).first
   next_commit = head
@@ -34,15 +34,17 @@ def story(searched_sha, branch, repo)
 
   while(!finished)
     current_commit = next_commit
+
+    #print travel path if the current commit is the one we're looking for
     print_story(current_commit, head, merge_commits, merge_commits_directions) if(current_commit.sha == searched_sha)
 
     #go back to previous merge commit and go to its next parent
-    if(current_commit.parents.empty? or processed_merge_commits.include?(current_commit) or current_commit.sha == searched_sha)
+    if(processed_shas.include?(current_commit.sha) or current_commit.parents.empty? or current_commit.sha == searched_sha)
       done = false
       while(!done and merge_commits.any?)
         merge_commits_directions[merge_commits_directions.length - 1] += 1
         if(merge_commits_directions.last == merge_commits.last.parents.length)
-          processed_merge_commits << merge_commits.pop
+          processed_shas << merge_commits.pop.sha
           merge_commits_directions.pop
         else
           done = true
@@ -57,8 +59,9 @@ def story(searched_sha, branch, repo)
       merge_commits_directions << 0
       next_commit = current_commit.parents[0]
 
-    #standard commit - go to first parent
+    #standard commit - add sha of current commit to set of processed shas and go to first parent
     else
+      processed_shas << current_commit.sha
       next_commit = current_commit.parents[0]
     end
   end
@@ -72,12 +75,12 @@ end
 git_directory = `git rev-parse --show-toplevel`
 repo = Grit::Repo.new(git_directory.chomp!)
 
-if(repo.branches.index{|branch| branch.name.eql?(opts[:branch])}.nil?)
+if(`git branch | grep -w #{opts[:branch]}` == '')
   puts "Error: the specified branch does not exist."
   exit(-1)
 end
 
-if(repo.commits(opts[:branch], false).index{|commit| commit.sha.eql?(opts[:commit])}.nil?)
+if(`git rev-list #{opts[:branch]} | grep -w #{opts[:commit]}` == '')
   puts "Error: the specified commit does not exist in the specified branch."
   exit(-1)
 end
