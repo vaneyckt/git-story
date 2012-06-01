@@ -84,12 +84,14 @@ def story(searched_sha, branch, repo)
     end
 
     # display progress
-    puts "progress: #{encountered_shas.length} / #{nb_commits}"
+    print "\n" if encountered_shas.length == 1
+    print "progress: #{encountered_shas.length} / #{nb_commits}\r"
   end
 
   # display travel paths
+  print "\n"
   travel_paths.each { |travel_path| puts travel_path }
-  puts "\n"
+  print "\n"
 end
 
 opts = Trollop::options do
