@@ -10,7 +10,7 @@ Next you'll want to download the script file from the /lib folder and make it ex
 
   chmod u+x git-story
 
-You can now run it by calling it by its full path name. You could also put the script somewhere in your $PATH and run it by typing 'git-story'.
+You can now run it by calling the script by its full path name. You could also put the script somewhere in your $PATH and run it by typing 'git-story'.
 
 == Example
 Finding all the ways that a given commit could have made it into a particular branch is as easy as running
