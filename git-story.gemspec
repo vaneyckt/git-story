@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'git-story'
-  s.version     = '0.0.3'
-  s.date        = '2012-05-27'
+  s.version     = '0.1.0'
+  s.date        = '2012-06-01'
   s.summary     = "A Ruby script for git that finds what branch a commit came from."
   s.description = "A Ruby script for git that finds what branch a commit came from."
   s.authors     = ["Tom Van Eyck"]

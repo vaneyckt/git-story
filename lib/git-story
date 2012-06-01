@@ -4,67 +4,92 @@ require 'set'
 require 'grit'
 require 'trollop'
 
-def print(commit, suffix)
-  puts "#{commit.committed_date}  #{commit.sha}  #{commit.message.strip.split("\n").first}  #{commit.committer}  #{suffix}"
+def describe(commit, suffix)
+  "#{commit.committed_date}  #{commit.sha}  #{commit.message.strip.split("\n").first}  #{commit.committer}  #{suffix}\n"
 end
 
-def print_story(current_commit, head, merge_commits, merge_commits_directions)
-  puts "\n"
-  puts "Possible path"
-  puts "-------------"
+def get_travel_path(current_commit, head, merge_commits, merge_commits_directions)
+  travel_path = ''
+  travel_path << "\n"
+  travel_path << "Possible path\n"
+  travel_path << "-------------\n"
 
-  print(current_commit, 'START')
+  travel_path << describe(current_commit, 'START')
   i = (merge_commits.length - 1)
   while(i >= 0)
-    #direction 0 indicates there was no branch change
-    print(merge_commits[i], 'MERGE') if(merge_commits_directions[i] != 0)
+    # direction 0 indicates there was no branch change
+    travel_path << describe(merge_commits[i], 'MERGE') if(merge_commits_directions[i] != 0)
     i -= 1
   end
-  print(head, 'HEAD')
+  travel_path << describe(head, 'HEAD')
+  travel_path
 end
 
 def story(searched_sha, branch, repo)
+  travel_paths = Set.new
+  encountered_shas = Set.new
+  nb_commits = (`git rev-list #{branch} | wc -l`).chomp!.to_i
+
   merge_commits = []
   merge_commits_directions = []
-  processed_shas = Set.new
 
   head = repo.commits(branch).first
   next_commit = head
-  finished = false
 
-  while(!finished)
+  while(!next_commit.nil?)
+    # move to next commit
     current_commit = next_commit
 
-    #print travel path if the current commit is the one we're looking for
-    print_story(current_commit, head, merge_commits, merge_commits_directions) if(current_commit.sha == searched_sha)
+    # current commit is the one we're looking for
+    #  collect travel paths
+    if(current_commit.sha == searched_sha)
+      travel_paths << get_travel_path(current_commit, head, merge_commits, merge_commits_directions)
+    end
 
-    #go back to previous merge commit and go to its next parent
-    if(processed_shas.include?(current_commit.sha) or current_commit.parents.empty? or current_commit.sha == searched_sha)
-      done = false
-      while(!done and merge_commits.any?)
-        merge_commits_directions[merge_commits_directions.length - 1] += 1
-        if(merge_commits_directions.last == merge_commits.last.parents.length)
-          processed_shas << merge_commits.pop.sha
-          merge_commits_directions.pop
+    # current commit has no parents
+    #  add sha to set of encountered shas and jump back to last merge commit
+    if(current_commit.parents.length == 0)
+      encountered_shas << current_commit.sha
+      next_commit = merge_commits.last
+
+    # current commit only has 1 parent
+    #  add sha to set of encountered shas and go to parent
+    elsif(current_commit.parents.length == 1)
+      encountered_shas << current_commit.sha
+      next_commit = current_commit.parents[0]
+
+    # current commit is merge commit
+    else(current_commit.parents.length > 1)
+
+      # newly encountered merge commit
+      #  add sha to set of encountered shas, update merge commits and go to first parent
+      if(!encountered_shas.include?(current_commit.sha))
+        encountered_shas << current_commit.sha
+        merge_commits << current_commit
+        merge_commits_directions << 0
+        next_commit = merge_commits.last.parents[merge_commits_directions.last]
+
+      # previously encountered merge commit
+      #  go to next parent if possible, otherwise jump back to last merge commit
+      else
+        if(merge_commits_directions.last < (merge_commits.last.parents.length - 1))
+          merge_commits_directions[merge_commits_directions.length - 1] += 1
+          next_commit = merge_commits.last.parents[merge_commits_directions.last]
         else
-          done = true
+          merge_commits.pop
+          merge_commits_directions.pop
+          next_commit = merge_commits.last
         end
       end
-      finished = merge_commits.empty?
-      next_commit = merge_commits.last.parents[merge_commits_directions.last] if !finished
-
-    #merge commit - update merge commits info and go to first parent of this merge commit
-    elsif(current_commit.parents.length > 1)
-      merge_commits << current_commit
-      merge_commits_directions << 0
-      next_commit = current_commit.parents[0]
-
-    #standard commit - add sha of current commit to set of processed shas and go to first parent
-    else
-      processed_shas << current_commit.sha
-      next_commit = current_commit.parents[0]
     end
+
+    # display progress
+    puts "progress: #{encountered_shas.length} / #{nb_commits}"
   end
+
+  # display travel paths
+  travel_paths.each { |travel_path| puts travel_path }
+  puts "\n"
 end
 
 opts = Trollop::options do
